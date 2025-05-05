@@ -1,0 +1,14 @@
+2024-06-24 17:34:04,775 [INFO] Loading files..
+2024-06-24 17:34:04,775 [INFO] Loading network file..
+2024-06-24 17:34:04,828 [INFO] ..done!
+2024-06-24 17:34:04,858 [INFO] Loading packets file..
+2024-06-24 17:34:04,963 [INFO] ..done!
+2024-06-24 17:34:04,963 [DEBUG] NETWORK and PACKETS structure loading time:Test duration:0:00:00.187867
+2024-06-24 17:34:04,964 [INFO] Analyzing files..
+2024-06-24 17:34:04,965 [INFO] Simulation parameters:
+2024-06-24 17:34:04,966 [INFO] {'averageDelta': 1000, 'colorblind': 'no', 'dotsSize': 'adaptive', 'graphType': 'mesh', 'linkCap': 10, 'packetsFile': 'json', 'simTime': 10, 'startSimTime': datetime.datetime(2024, 3, 22, 12, 30), 'updateDelta': 200}
+2024-06-24 17:34:06,378 [INFO] ..done!
+2024-06-24 17:34:06,379 [DEBUG] ANALYZING time:Test duration:0:00:01.414451
+2024-06-24 17:34:07,292 [INFO] Writing analyzed_data_test.yaml file..
+2024-06-24 17:34:07,370 [INFO] analyzed_data_test.yaml file creation done!
+2024-06-24 17:34:07,371 [DEBUG] ANALYZED DATA structure creation and writing time:Test duration:0:00:00.991276

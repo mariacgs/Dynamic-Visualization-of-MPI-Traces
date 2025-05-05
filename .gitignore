@@ -1,0 +1,5 @@
+builds/
+
+*.o  #Ignores all object files, which are temporary files generated during compilation
+*.out #Ignores all .out files
+*.exe #Ignores all .exe files
