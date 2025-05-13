@@ -1,0 +1,3 @@
+[submodule "network_traffic_visualizer"]
+	path = network_traffic_visualizer
+	url = https://github.com/mariacgs/network_traffic_visualizer.git
