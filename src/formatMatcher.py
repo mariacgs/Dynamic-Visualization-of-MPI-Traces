@@ -39,7 +39,7 @@ def main(vefFile, packets, network):
 
                     msgID = int(line[0])
                     source = int(line[1])+1
-                    dest = int(line[2])+2
+                    dest = int(line[2])+1
                     numBytes = int(line[3])
                     dep = int(line[4])
                     timeMicro = int(line[5])*1e-6*1000 # multiply by a 1000 because we get how many picoseconds a cycle takes: 1000ps
