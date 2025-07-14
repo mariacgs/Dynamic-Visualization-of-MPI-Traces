@@ -6,3 +6,4 @@ data/
 *.out #Ignores all .out files
 *.exe #Ignores all .exe files
 *.txt
+*pyc
