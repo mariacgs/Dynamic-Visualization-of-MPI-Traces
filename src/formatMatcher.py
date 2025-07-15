@@ -111,4 +111,4 @@ def main(vefFile, packets, network):
     #print(listDicts)
     print(msgTimeMapping)
 
-main("data/output_trace_dummyRecv.vef", "packets.yaml", "network_traffic_visualizer/data/network.yaml")
+main("data/outputLongerDummy.vef", "packets1.yaml", "network_traffic_visualizer/data/network.yaml")
