@@ -9,7 +9,7 @@ def transmissionTime(baseDelay, numBytes, bandwidth):
     numBits = numBytes*8
     bandwidthBitsPerSec = bandwidth * 1e9
     delaySec = numBits/bandwidthBitsPerSec
-    return baseDelay + (delaySec*1e6)
+    return baseDelay + (delaySec*1e3)
 
 def processNetwork(networkFile):
     with open(networkFile, "r") as f:
@@ -21,6 +21,7 @@ def processNetwork(networkFile):
 def main(vefFile, packets, network):
     baseDelay = 1.5
     startTime, simTime = processNetwork(network)
+    counter = 3
 
     """ CHANGE TO USER SPECIFIED"""
     bandwidth = 200
@@ -32,74 +33,92 @@ def main(vefFile, packets, network):
             line = line.split()
             if lineNum == 1:
                 clock = int(line[-1])
+                continue
+            
+            if lineNum == 2:
+                continue
 
-            elif lineNum != 2:
-            #check if its not a wait
-                if line[3] != 0 and line[1] != line[2]:
+            #if its a wait
+            if line[3] == '0' and line[1] == line[2]:
+                counter += counter
+                continue
 
-                    msgID = int(line[0])
-                    source = int(line[1])+1
-                    dest = int(line[2])+1
-                    numBytes = int(line[3])
-                    dep = int(line[4])
-                    timeMicro = int(line[5])*1e-6*1000 # multiply by a 1000 because we get how many picoseconds a cycle takes: 1000ps
-                    dTime = int(line[6])
+            msgID = int(line[0])
+            source = int(line[1])+1
+            dest = int(line[2])+1
+            numBytes = int(line[3])
+            dep = int(line[4])
+            timeMili = int(line[5])*1e-9*clock # multiply by a 1000 because we get how many picoseconds a cycle takes: 1000ps
+            dTime = int(line[6])
 
-                    #reset dictionary
-                    dct = {"A" : 0, "B": 0, "t": "", "d": 0}
+            #reset dictionary
+            dct = {"A" : 0, "B": 0, "t": "", "d": 0}
 
-                    #add source, dest and length
-                    dct["A"] = source
-                    dct["B"] = dest
-                    dct["d"] = numBytes
+            #add source, dest and length
+            dct["A"] = source
+            dct["B"] = dest
+            dct["d"] = numBytes
 
-                    #check if its a message that depends on another message
-                    match dep:
-                        case 0 | 4:
-                            formattedTime = datetime.timedelta(microseconds=timeMicro)
+            #if its the first message we put it the startime
+            if lineNum == counter:
+                dct["t"] = startTime
+                firstMsg = msgID
+                msgTimeMapping[msgID] = timeMili
+                listDicts.append(dct)
+                counter = float('inf')
+                continue
 
-                            #adding time to dict for independent messages
-                            dct["t"] = startTime + formattedTime
+            #check dependency of the message (not considering first message)
+            match dep:
+                case 0 | 4:
+                    delta = timeMili - msgTimeMapping[firstMsg]
 
-                            #adding time(in microseconds) and message ID to mapping
-                            msgTimeMapping[msgID] = timeMicro
+                    formattedTime = datetime.timedelta(milliseconds=delta)
+                    #adding time to dict for independent messages
+                    dct["t"] = startTime + formattedTime
 
-                        #for messages dependent on others
-                        #if its a receive dependency:
-                        case 2 | 6:
+                    #adding time(in microseconds) and message ID to mapping
+                    msgTimeMapping[msgID] = timeMili
 
-                            #get transmission time of the message
-                            transTime = transmissionTime(baseDelay, numBytes, bandwidth)
+                #if its a receive dependency:
+                case 2 | 6:
 
-                            #get the timestamp it was received considering send and transmission time
-                            recvTime = msgTimeMapping[dTime] + transTime
+                    #get transmission time of the message
+                    transTime = transmissionTime(baseDelay, numBytes, bandwidth)
 
-                            sendTime = timeMicro + recvTime
+                    #get the timestamp it was received considering send and transmission time
+                    recvTime = msgTimeMapping[dTime] + transTime
 
-                            formattedTime = datetime.timedelta(microseconds=sendTime)
+                    sendTime = timeMili + recvTime
 
-                            #add send timestamp of message in microseconds to the dictionary
-                            dct["t"] = startTime + formattedTime
+                    delta = sendTime - msgTimeMapping[firstMsg]
 
-                            #adding timestamp (in microseconds) and message ID to mapping
-                            msgTimeMapping[msgID] = sendTime
+                    formattedTime = datetime.timedelta(milliseconds=delta)
 
-                        case _:
-                            #get the timestamp the message depends on
-                            depTime = msgTimeMapping[dTime]
+                    #add send timestamp of message in microseconds to the dictionary
+                    dct["t"] = startTime + formattedTime
 
-                            sendTime = timeMicro + depTime
+                    #adding timestamp (in microseconds) and message ID to mapping
+                    msgTimeMapping[msgID] = sendTime
 
-                            formattedTime = datetime.timedelta(microseconds=sendTime)
+                case _:
+                    #get the timestamp the message depends on
+                    depTime = msgTimeMapping[dTime]
 
-                            #add send timestamp of message in microseconds to the dictionary
-                            dct["t"] = startTime + formattedTime
-                            #adding timestamp (in microseconds) and message ID to mapping
-                            msgTimeMapping[msgID] = sendTime
-                    
-                        #adds dictionary to list, only if its not a wait
+                    sendTime = timeMili + depTime
 
-                    listDicts.append(dct)
+                    delta = sendTime - msgTimeMapping[firstMsg]           
+
+                    formattedTime = datetime.timedelta(milliseconds=delta)
+
+                    #add send timestamp of message in microseconds to the dictionary
+                    dct["t"] = startTime + formattedTime
+                    #adding timestamp (in microseconds) and message ID to mapping
+                    msgTimeMapping[msgID] = sendTime
+            
+                #adds dictionary to list, only if its not a wait
+
+            listDicts.append(dct)
 
 
     sortedList = sorted(listDicts, key= lambda x: x["t"])
@@ -109,6 +128,6 @@ def main(vefFile, packets, network):
 
 
     #print(listDicts)
-    print(msgTimeMapping)
+    #print(msgTimeMapping)
 
-main("data/outputLongerDummy.vef", "packets1.yaml", "network_traffic_visualizer/data/network.yaml")
+main("data/outputLongerDummy.vef", "packetsTime.yaml", "network_traffic_visualizer/data/network.yaml")
