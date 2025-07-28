@@ -4,8 +4,7 @@
 #include <mpi.h>
 #include <stdbool.h>
 #include <time.h>
-
-#define MAX_STRING_LEN 5000
+#define MAX_STRING_LEN 100000
 #define NUM_MSGS 100
 
 int main(int argc, char** argv){
@@ -15,80 +14,87 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if (size != 4) {
-        if (rank == 0)
-            printf("This program needs exactly 4 processes.\n");
-        MPI_Finalize();
-        return 1;
+    int targets[size-1];
+    int target = rank +1;
+
+    for(int i = 0; i < size -1; i++){
+        if (target == size){
+            target = 0;
+        }
+
+        targets[i] = target;
+        target ++;
     }
 
-    int targets[3];
-
-    switch(rank){
-        case 0:
-            targets[0] = 1;
-            targets[1] = 2;
-            targets[2] = 3;
-            break;
-        case 1:
-            targets[0] = 2;
-            targets[1] = 3;
-            targets[2] = 0;
-            break;
-        case 2:
-            targets[0] = 3;
-            targets[1] = 0;
-            targets[2] = 1;
-            break;
-        case 3:
-            targets[0] = 0;
-            targets[1] = 1;
-            targets[2] = 2;
-            break;         
-    }
-    
     srand(time(NULL) + rank * 100);
     int msg_size;
-    int target;
     int random;
-    char dummy_send[MAX_STRING_LEN];
-    char dummy_recv[MAX_STRING_LEN];
+    char* dummy_send = malloc(MAX_STRING_LEN);
+    char* dummy_recv = malloc(MAX_STRING_LEN);
     
     MPI_Request req;
    // MPI_Irecv(dummy_recv, MAX_STRING_LEN, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &persistent_req);
 
+    int sender = rank - 1;
+    if(rank == 0){
+        sender = size - 1;
+    }
+
+    printf("this is beggining and my sender is: %d\n", sender);
 
     for(int i = 0; i < NUM_MSGS; i++){
-        MPI_Irecv(dummy_recv, MAX_STRING_LEN, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &req);
-        target = targets[i%3];
-
+        int index = i%(size-1);
+        target = targets[index];
         random = rand()%100;
 
         if(random < 50){
-            msg_size = 16;
+            msg_size = 10000;
         }
-        if(random < 90){
-            msg_size = 512;
+        else if(random < 90){
+            msg_size = 50000;
         }
         else{
-            msg_size = 5000;
+            msg_size = 75000;
         }
-        for(int i = 0; i<msg_size; i++){
-            dummy_send[i] = "abcdefghijklmnopqrstuvwxyz"[rand()%26];
+
+        if (msg_size > MAX_STRING_LEN) {
+            printf("Error: msg_size exceeds buffer size!\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
         }
-       // MPI_Request req;
 
-       // MPI_Irecv(dummy_recv, MAX_STRING_LEN, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &req);
+        for(int j = 0; j<msg_size; j++){
+            dummy_send[j] = "abcdefghijklmnopqrstuvwxyz"[rand()%26];
+        }
 
+        // Post receive first
+        MPI_Irecv(dummy_recv, MAX_STRING_LEN, MPI_CHAR, sender, MPI_ANY_TAG, MPI_COMM_WORLD, &req);
+        
         printf("[rank %d] sending %d bytes to %d (iter %d)\n", rank, msg_size, target, i);
         fflush(stdout);
+
+       // MPI_Barrier(MPI_COMM_WORLD);
         MPI_Send(dummy_send, msg_size, MPI_CHAR, target, 0, MPI_COMM_WORLD);
+
+        if ((i+1)%(size-1) == 0){
+            sender = rank - 1;
+            if(rank == 0){
+                sender = size - 1;
+            }
+        } else {
+            sender --;
+            if(sender == -1){
+                sender = size-1;
+            }
+        }
+
+        printf("IT: %d, rank: %d and my sender is: %d\n", i, rank, sender);
     
         MPI_Wait(&req, MPI_STATUS_IGNORE);
-        //MPI_Wait(&req, MPI_STATUS_IGNORE);
         printf("[rank %d] iter %d: received message\n", rank, i);
-       // MPI_Irecv(dummy_recv, MAX_STRING_LEN, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &persistent_req);
     }
+
+    free(dummy_send);
+    free(dummy_recv);
 
     MPI_Finalize();
     return 0;
