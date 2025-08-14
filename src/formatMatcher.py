@@ -16,15 +16,19 @@ def processNetwork(networkFile):
         networkDict = yaml.safe_load(f)
     startTime = networkDict[2]["startSimTime"]
     simTime = networkDict[2]["simTime"]
-    return startTime, simTime
+    linkCap = networkDict[2]["linkCap"]
+    timestampType = networkDict[2]["timestampType"]
+
+    #fileType = networkDict[2]["packetsFile"] IS IT ACTUALLY NECESSARY - I DONT THINK SO
+    return startTime, simTime, linkCap, timestampType
 
 def main(vefFile, packets, network):
     baseDelay = 1.5
-    startTime, simTime = processNetwork(network)
+    startTime, simTime, linkCap, timestampType = processNetwork(network)
     counter = 3
 
     """ CHANGE TO USER SPECIFIED"""
-    bandwidth = 200
+   ## bandwidth = 200               BANDWIDTH = LINK CAP IN THIS CASE ?
 
     listDicts = []
     msgTimeMapping = {}
@@ -84,7 +88,7 @@ def main(vefFile, packets, network):
                 case 2 | 6:
 
                     #get transmission time of the message
-                    transTime = transmissionTime(baseDelay, numBytes, bandwidth)
+                    transTime = transmissionTime(baseDelay, numBytes, linkCap)
 
                     #get the timestamp it was received considering send and transmission time
                     recvTime = msgTimeMapping[dTime] + transTime
@@ -130,4 +134,4 @@ def main(vefFile, packets, network):
     #print(listDicts)
     #print(msgTimeMapping)
 
-main("data/outputLongerDummy.vef", "packetsTime.yaml", "network_traffic_visualizer/data/network.yaml")
+main("output_ClusterTest.vef", "packetsTime.yaml", "network_traffic_visualizer/data/network.yaml")
